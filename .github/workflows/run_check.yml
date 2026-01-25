@@ -1,0 +1,41 @@
+name: GFS Monitor Service
+
+on:
+  schedule:
+    # S'exécute toutes les 5 minutes (le maximum autorisé par GitHub)
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Permet de lancer le bot manuellement pour tester
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    # Important : donne la permission d'écrire dans le dépôt pour status.json
+    permissions:
+      contents: write
+
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Installation de Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: 📦 Installation des dépendances
+        run: |
+          pip install -r requirements.txt
+
+      - name: 🛰️ Exécution du script de détection
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+        run: python bot_noaa.py
+
+      - name: 💾 Sauvegarde de l'état (Memory)
+        run: |
+          git config --global user.name 'GFS-Bot-Automator'
+          git config --global user.email 'bot@github.com'
+          git add status.json
+          # On commit seulement s'il y a eu un changement pour éviter les erreurs
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update NOAA cycle status [skip ci]" && git push)

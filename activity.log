@@ -4,3 +4,4 @@
 [2026-01-25 16:52:49] CHECK: Cycle 12z en cours (f384 non trouvé).
 [2026-01-25 17:00:46] CHECK: Cycle 12z en cours (f384 non trouvé).
 [2026-01-25 17:34:55] ALERTE: Cycle 12z marqué comme COMPLET.
+[2026-01-25 17:40:10] CHECK: Cycle 12z déjà terminé. En attente du prochain.

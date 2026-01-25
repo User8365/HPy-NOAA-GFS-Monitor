@@ -6,6 +6,7 @@ from datetime import datetime
 # --- CONFIGURATION ---
 TOKEN = os.getenv('DISCORD_TOKEN')
 CHANNEL_ID = os.getenv('CHANNEL_ID')
+MENTION = "@everyone"
 BASE_URL = "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/"
 
 def log_activity(message):

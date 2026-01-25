@@ -19,7 +19,7 @@ def send_discord_alert(message, is_success=False):
     headers = {"Authorization": f"Bot {TOKEN}", "Content-Type": "application/json"}
     color = 0x00ff00 if is_success else 0x3498db
     payload = {"embeds": [{
-        "title": "📡 Surveillance GFS 0.25°",
+        "title": "📡 Surveillance NOAA GFS 0.25°",
         "description": message,
         "color": color,
         "timestamp": datetime.utcnow().isoformat()

@@ -12,3 +12,4 @@
 [2026-01-25 19:45:57] CHECK: Cycle 12z déjà terminé. En attente du prochain.
 [2026-01-25 19:59:10] CHECK: Cycle 12z déjà terminé. En attente du prochain.
 [2026-01-25 20:47:46] ALERTE: Nouveau cycle détecté (18z)
+[2026-01-25 21:33:29] CHECK: Cycle 18z en cours (f384 non trouvé).

@@ -32,7 +32,7 @@ jobs:
           CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
         run: python bot_noaa.py
 
-                  - name: 💾 Sauvegarde de l'état et des logs
+      - name: 💾 Sauvegarde de l'état et des logs
         run: |
           git config --global user.name 'GFS-Bot-Automator'
           git config --global user.email 'bot@github.com'

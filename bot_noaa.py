@@ -19,12 +19,13 @@ def send_discord_alert(message, is_success=False):
     url = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
     headers = {"Authorization": f"Bot {TOKEN}", "Content-Type": "application/json"}
     color = 0x00ff00 if is_success else 0xcc00cc
-    payload = {"embeds": [{
-        "title": "🛰 Surveillance NOAA GFS 0.25°",
+    payload = {
         "content": "<@&873137469770592267>", # Mentionne hpy team
-        "description": message,
-        "color": color,
-        "timestamp": datetime.utcnow().isoformat()
+        "embeds": [{
+            "title": "🛰 Surveillance NOAA GFS 0.25°",
+            "description": message,
+            "color": color,
+            "timestamp": datetime.utcnow().isoformat()
     }]}
     requests.post(url, headers=headers, json=payload)
 

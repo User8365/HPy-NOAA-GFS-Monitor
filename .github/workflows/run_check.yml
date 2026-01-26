@@ -1,9 +1,6 @@
 name: GFS Monitor Service
 
 on:
-  schedule:
-    # S'exécute toutes les 6 minutes (le maximum autorisé par GitHub)
-    - cron: '*/6 * * * *'
   workflow_dispatch: # Permet de lancer le bot manuellement pour tester
 
 jobs:

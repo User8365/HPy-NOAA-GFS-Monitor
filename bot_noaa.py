@@ -10,10 +10,26 @@ MENTION = "<@&873137469770592267>"
 BASE_URL = "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/"
 
 def log_activity(message):
-    """Ajoute une ligne horodatée au fichier activity.log"""
+    """Ajoute une ligne et garde seulement les 3000 dernières lignes (~10 jours)"""
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    with open('activity.log', 'a') as f:
-        f.write(f"[{timestamp}] {message}\n")
+    new_line = f"[{timestamp}] {message}\n"
+    
+    # 1. Lire les logs existants
+    lines = []
+    if os.path.exists('activity.log'):
+        with open('activity.log', 'r') as f:
+            lines = f.readlines()
+    
+    # 2. Ajouter la nouvelle ligne
+    lines.append(new_line)
+    
+    # 3. Ne garder que les 3000 dernières lignes
+    if len(lines) > 3000:
+        lines = lines[-3000:]
+    
+    # 4. Réécrire le fichier
+    with open('activity.log', 'w') as f:
+        f.writelines(lines)
 
 def send_discord_alert(message, is_success=False):
     url = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"

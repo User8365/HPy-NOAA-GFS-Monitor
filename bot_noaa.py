@@ -6,7 +6,7 @@ from datetime import datetime
 # --- CONFIGURATION ---
 TOKEN = os.getenv('DISCORD_TOKEN')
 CHANNEL_ID = os.getenv('CHANNEL_ID')
-MENTION = "@everyone"
+MENTION = "<@&873137469770592267>"
 BASE_URL = "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/"
 
 def log_activity(message):
@@ -20,7 +20,8 @@ def send_discord_alert(message, is_success=False):
     headers = {"Authorization": f"Bot {TOKEN}", "Content-Type": "application/json"}
     color = 0x00ff00 if is_success else 0x3498db
     payload = {"embeds": [{
-        "title": "📡 Surveillance NOAA GFS 0.25°",
+        "title": "🛰 Surveillance NOAA GFS 0.25°",
+        "content": "<@&873137469770592267>", # Mentionne hpy team
         "description": message,
         "color": color,
         "timestamp": datetime.utcnow().isoformat()
@@ -55,7 +56,7 @@ def check_noaa():
 
     # CAS A : Nouveau cycle
     if cycle_id != status["last_cycle"]:
-        msg = f"🚀 Début du transfert détecté pour le cycle **{current_cycle}z**."
+        msg = f"🌀GRIB **{current_cycle}Z EN COURS**."
         send_discord_alert(msg)
         log_activity(f"ALERTE: Nouveau cycle détecté ({current_cycle}z)")
         status = {"last_cycle": cycle_id, "is_completed": False}
@@ -66,7 +67,7 @@ def check_noaa():
         check_res = requests.head(f"{BASE_URL}{file_check}")
         
         if check_res.status_code == 200:
-            msg = f"✅ Cycle complet ! Le cycle **{current_cycle}z** est prêt."
+            msg = f"🚀GRIB **{current_cycle}Z** COMPLET."
             send_discord_alert(msg, is_success=True)
             log_activity(f"ALERTE: Cycle {current_cycle}z marqué comme COMPLET.")
             status["is_completed"] = True

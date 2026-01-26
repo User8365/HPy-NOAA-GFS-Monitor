@@ -48,6 +48,7 @@ def log_activity(message):
         f.writelines(lines)
 
 def send_discord_alert(is_success=False, cycle_h=""):
+    """Envoie l'alerte et retourne True si l'envoi a réussi"""
     url = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
     headers = {"Authorization": f"Bot {TOKEN}", "Content-Type": "application/json"}
     color = 0x00ff00 if is_success else 0xcc00cc
@@ -72,7 +73,12 @@ def send_discord_alert(is_success=False, cycle_h=""):
             "footer": {"text": "NOMADS NOAA Server Monitoring"}
         }]
     }
-    requests.post(url, headers=headers, json=payload)
+    
+    try:
+        r = requests.post(url, headers=headers, json=payload, timeout=10)
+        return r.status_code in [200, 204]
+    except:
+        return False
 
 def check_noaa():
     today = datetime.utcnow().strftime('%Y%m%d')
@@ -93,19 +99,27 @@ def check_noaa():
     current_cycle = found_cycles[0]
     cycle_id = f"{today}_{current_cycle}"
 
+    # Cas 1 : Nouveau cycle détecté
     if cycle_id != status["last_cycle"]:
-        send_discord_alert(is_success=False, cycle_h=current_cycle)
-        log_activity(f"ALERTE: Nouveau cycle {current_cycle}z")
-        status = {"last_cycle": cycle_id, "is_completed": False}
+        if send_discord_alert(is_success=False, cycle_h=current_cycle):
+            log_activity(f"ALERTE: Nouveau cycle {current_cycle}z")
+            status = {"last_cycle": cycle_id, "is_completed": False}
+        else:
+            log_activity(f"ERREUR: Échec envoi Discord début cycle {current_cycle}z")
 
+    # Cas 2 : Cycle en cours, on vérifie s'il est complet
     elif not status["is_completed"]:
         file_check = f"gfs.{today}/{current_cycle}/atmos/gfs.t{current_cycle}z.pgrb2.0p25.f384.idx"
-        check_res = requests.head(f"{BASE_URL}{file_check}")
-        
-        if check_res.status_code == 200:
-            send_discord_alert(is_success=True, cycle_h=current_cycle)
-            log_activity(f"ALERTE: Cycle {current_cycle}z COMPLET.")
-            status["is_completed"] = True
+        try:
+            check_res = requests.head(f"{BASE_URL}{file_check}", timeout=10)
+            if check_res.status_code == 200:
+                if send_discord_alert(is_success=True, cycle_h=current_cycle):
+                    log_activity(f"ALERTE: Cycle {current_cycle}z COMPLET.")
+                    status["is_completed"] = True
+                else:
+                    log_activity(f"ERREUR: Échec envoi Discord fin cycle {current_cycle}z")
+        except:
+            return
 
     with open('status.json', 'w') as f:
         json.dump(status, f)

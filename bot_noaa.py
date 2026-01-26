@@ -28,10 +28,12 @@ def get_saint_du_jour():
     """Récupère le prénom du jour via l'API Nominis"""
     try:
         r = requests.get("https://nominis.cef.fr/json/nominis.php", timeout=5)
-        data = r.json()
-        return data['saint']['main']['nom']
+        if r.status_code == 200:
+            data = r.json()
+            return data['saint']['main']['nom']
     except:
-        return "tout le monde"
+        pass
+    return None # Retourne None en cas de pépin
 
 def log_activity(message):
     """Ajoute une ligne et garde seulement les 3000 dernières lignes"""
@@ -54,12 +56,15 @@ def send_discord_alert(is_success=False, cycle_h=""):
     color = 0x00ff00 if is_success else 0xcc00cc
     
     if is_success:
-        raw_msg = MESSAGES_FIN.get(cycle_h, f"Cycle {cycle_h}z terminé.")
-        if cycle_h == "00":
-            saint = get_saint_du_jour()
-            msg = raw_msg.format(saint=saint)
-        else:
-            msg = raw_msg
+        msg = MESSAGES_FIN.get(cycle_h, f"Cycle {cycle_h}z terminé.")
+        # ISOLATION DU SAINT : Uniquement pour le 00z et seulement si ça fonctionne
+        if cycle_h == "00" and "{saint}" in msg:
+            prenom_saint = get_saint_du_jour()
+            if prenom_saint:
+                msg = msg.format(saint=prenom_saint)
+            else:
+                # Si l'API des saints échoue, on nettoie le message pour éviter l'erreur de formatage
+                msg = msg.replace("\n **Et Bonne Fête aux {saint} !** 🥳", "")
     else:
         msg = MESSAGES_DEBUT.get(cycle_h, f"Début du cycle {cycle_h}z.")
 
@@ -99,15 +104,15 @@ def check_noaa():
     current_cycle = found_cycles[0]
     cycle_id = f"{today}_{current_cycle}"
 
-    # Cas 1 : Nouveau cycle détecté
+    # CAS 1 : NOUVEAU CYCLE
     if cycle_id != status["last_cycle"]:
         if send_discord_alert(is_success=False, cycle_h=current_cycle):
             log_activity(f"ALERTE: Nouveau cycle {current_cycle}z")
             status = {"last_cycle": cycle_id, "is_completed": False}
         else:
-            log_activity(f"ERREUR: Échec envoi Discord début cycle {current_cycle}z")
+            log_activity(f"ERREUR: Échec Discord début {current_cycle}z")
 
-    # Cas 2 : Cycle en cours, on vérifie s'il est complet
+    # CAS 2 : VÉRIFICATION COMPLÉTION
     elif not status["is_completed"]:
         file_check = f"gfs.{today}/{current_cycle}/atmos/gfs.t{current_cycle}z.pgrb2.0p25.f384.idx"
         try:
@@ -117,7 +122,7 @@ def check_noaa():
                     log_activity(f"ALERTE: Cycle {current_cycle}z COMPLET.")
                     status["is_completed"] = True
                 else:
-                    log_activity(f"ERREUR: Échec envoi Discord fin cycle {current_cycle}z")
+                    log_activity(f"ERREUR: Échec Discord fin {current_cycle}z")
         except:
             return
 

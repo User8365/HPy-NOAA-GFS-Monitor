@@ -14,14 +14,14 @@ MESSAGES_DEBUT = {
     "00": "🌙 **GRIB 00Z en préparation** (Arrivée prévue au petit matin...)",
     "06": "🌤 **Chargement du GRIB 06Z en cours** (Prêt pour la pause déjeuner !)",
     "12": "🌆 **GRIB 12Z en route** (Le run du soir arrive...)",
-    "18": "🌑 **GRIB 18Z lancé** (Calcul pour la nuit en cours...)"
+    "18": "🌑 **GRIB 18Z lancé** (Le chargement pour la nuit en cours...)"
 }
 
 MESSAGES_FIN = {
     "00": "☕ **GRIB 00Z DISPONIBLE !** Bonjour l'équipe, les données du réveil sont là.\n **Et Bonne Fête aux {saint} !** 🥳",
     "06": "🍴 **GRIB 06Z DISPONIBLE !** Juste à temps pour le point de la mi-journée. Bon app' les HPy !",
-    "12": "🍹 **GRIB 12Z DISPONIBLE !** Les prévisions pour la soirée !",
-    "18": "💤 **GRIB 18Z DISPONIBLE !** Le grib des noctambules... 🥱😴"
+    "12": "🍹 **GRIB 12Z DISPONIBLE !** Les prévisions pour la soirée... A vos routeurs !",
+    "18": "💤 **GRIB 18Z DISPONIBLE !** Le grib des courageux noctambules... 🥱😴"
 }
 
 def get_saint_du_jour():
@@ -56,7 +56,7 @@ def send_discord_alert(is_success=False, cycle_h=""):
     color = 0x00ff00 if is_success else 0xcc00cc
     
     if is_success:
-        msg = MESSAGES_FIN.get(cycle_h, f"Cycle {cycle_h}z terminé.")
+        msg = MESSAGES_FIN.get(cycle_h, f"GRIB {cycle_h}Z terminé!")
         # ISOLATION DU SAINT : Uniquement pour le 00z et seulement si ça fonctionne
         if cycle_h == "00" and "{saint}" in msg:
             prenom_saint = get_saint_du_jour()
@@ -66,16 +66,16 @@ def send_discord_alert(is_success=False, cycle_h=""):
                 # Si l'API des saints échoue, on nettoie le message pour éviter l'erreur de formatage
                 msg = msg.replace("\n **Et Bonne Fête aux {saint} !** 🥳", "")
     else:
-        msg = MESSAGES_DEBUT.get(cycle_h, f"Début du cycle {cycle_h}z.")
+        msg = MESSAGES_DEBUT.get(cycle_h, f"Début de chargement du GRIB {cycle_h}Z.")
 
     payload = {
         "content": MENTION,
         "embeds": [{
-            "title": f"🛰 GFS 0.25° | Actualisation {cycle_h}z",
+            "title": f"🛰 GFS GRIB MONITOR | Run {cycle_h}Z",
             "description": msg,
             "color": color,
             "timestamp": datetime.utcnow().isoformat(),
-            "footer": {"text": "NOMADS NOAA Server Monitoring"}
+            "footer": {"text": "NOAA Server Monitoring for HPy Team"}
         }]
     }
     

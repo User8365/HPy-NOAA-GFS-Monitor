@@ -25,15 +25,16 @@ MESSAGES_FIN = {
 }
 
 def get_saint_du_jour():
-    """Récupère le prénom du jour via l'API Nominis"""
+    """Récupère le prénom du jour via l'API PageDuJour (plus stable)"""
     try:
-        r = requests.get("https://nominis.cef.fr/json/nominis.php", timeout=5)
+        # Timeout court pour ne pas ralentir le bot
+        r = requests.get("https://www.pagedujour.fr/api/fete-du-jour", timeout=5)
         if r.status_code == 200:
             data = r.json()
-            return data['saint']['main']['nom']
+            return data.get('nom')
     except:
         pass
-    return None # Retourne None en cas de pépin
+    return None
 
 def log_activity(message):
     """Ajoute une ligne et garde seulement les 3000 dernières lignes"""
@@ -56,14 +57,15 @@ def send_discord_alert(is_success=False, cycle_h=""):
     color = 0x00ff00 if is_success else 0xcc00cc
     
     if is_success:
-        msg = MESSAGES_FIN.get(cycle_h, f"GRIB {cycle_h}Z terminé!")
-        # ISOLATION DU SAINT : Uniquement pour le 00z et seulement si ça fonctionne
+        msg = MESSAGES_FIN.get(cycle_h, f"GRIB {cycle_h}z terminé!")
+        # ISOLATION DU SAINT : Uniquement pour le 00z
         if cycle_h == "00" and "{saint}" in msg:
             prenom_saint = get_saint_du_jour()
             if prenom_saint:
                 msg = msg.format(saint=prenom_saint)
             else:
-                # Si l'API des saints échoue, on nettoie le message pour éviter l'erreur de formatage
+                # Log de l'erreur API sans bloquer le message Discord
+                log_activity("INFO: API Saints indisponible (Message 00z envoyé sans prénom)")
                 msg = msg.replace("\n **Et Bonne Fête aux {saint} !** 🥳", "")
     else:
         msg = MESSAGES_DEBUT.get(cycle_h, f"Début de chargement du GRIB {cycle_h}Z.")
@@ -71,7 +73,7 @@ def send_discord_alert(is_success=False, cycle_h=""):
     payload = {
         "content": MENTION,
         "embeds": [{
-            "title": f"🛰 GFS GRIB MONITOR | Run {cycle_h}Z",
+            "title": f"🛰 GFS GRIB MONITOR | Run {cycle_h}z",
             "description": msg,
             "color": color,
             "timestamp": datetime.utcnow().isoformat(),

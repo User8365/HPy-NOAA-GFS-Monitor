@@ -1,6 +1,7 @@
 import requests
 import os
 import json
+import random # Ajouté pour choisir un saint dans la liste
 from datetime import datetime
 
 # --- CONFIGURATION ---
@@ -12,7 +13,7 @@ BASE_URL = "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/"
 # --- VOS MESSAGES RECALÉS SUR L'HEURE FRANÇAISE ---
 MESSAGES_DEBUT = {
     "00": "🌙 **GRIB 00Z en préparation** (Arrivée prévue au petit matin...)",
-    "06": "🌤 **Chargement du GRIB 06Z en cours** (Prêt pour la pause déjeuner !)",
+    "06": "🌤 **GRIB 06Z en cours** (Prêt pour la pause déjeuner !)",
     "12": "🌆 **GRIB 12Z en route** (Le run du soir arrive...)",
     "18": "🌑 **GRIB 18Z lancé** (Le chargement pour la nuit en cours...)"
 }
@@ -25,15 +26,22 @@ MESSAGES_FIN = {
 }
 
 def get_saint_du_jour():
-    """Récupère le prénom du jour via l'API PageDuJour (plus stable)"""
+    """Récupère le prénom du jour depuis le fichier local saints.json"""
     try:
-        # Timeout court pour ne pas ralentir le bot
-        r = requests.get("https://www.pagedujour.fr/api/fete-du-jour", timeout=5)
-        if r.status_code == 200:
-            data = r.json()
-            return data.get('nom')
-    except:
-        pass
+        now = datetime.now()
+        mois = str(now.month)
+        jour = str(now.day)
+        
+        if os.path.exists('saints.json'):
+            with open('saints.json', 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                # Accès à la structure : data["mois"]["jour"] -> retourne une liste
+                liste_saints = data.get(mois, {}).get(jour, [])
+                if liste_saints:
+                    # On prend le premier de la liste ou un au hasard
+                    return liste_saints[0] 
+    except Exception as e:
+        log_activity(f"ERREUR lecture saints.json: {e}")
     return None
 
 def log_activity(message):
@@ -57,15 +65,13 @@ def send_discord_alert(is_success=False, cycle_h=""):
     color = 0x00ff00 if is_success else 0xcc00cc
     
     if is_success:
-        msg = MESSAGES_FIN.get(cycle_h, f"GRIB {cycle_h}z terminé!")
-        # ISOLATION DU SAINT : Uniquement pour le 00z
+        msg = MESSAGES_FIN.get(cycle_h, f"GRIB {cycle_h}Z terminé!")
         if cycle_h == "00" and "{saint}" in msg:
             prenom_saint = get_saint_du_jour()
             if prenom_saint:
                 msg = msg.format(saint=prenom_saint)
             else:
-                # Log de l'erreur API sans bloquer le message Discord
-                log_activity("INFO: API Saints indisponible (Message 00z envoyé sans prénom)")
+                # Nettoyage si le fichier saints.json est absent ou vide
                 msg = msg.replace("\n **Et Bonne Fête aux {saint} !** 🥳", "")
     else:
         msg = MESSAGES_DEBUT.get(cycle_h, f"Début de chargement du GRIB {cycle_h}Z.")
@@ -73,7 +79,7 @@ def send_discord_alert(is_success=False, cycle_h=""):
     payload = {
         "content": MENTION,
         "embeds": [{
-            "title": f"🛰 GFS GRIB MONITOR | Run {cycle_h}z",
+            "title": f"🛰 GFS GRIB MONITOR | Run {cycle_h}Z",
             "description": msg,
             "color": color,
             "timestamp": datetime.utcnow().isoformat(),
@@ -106,7 +112,6 @@ def check_noaa():
     current_cycle = found_cycles[0]
     cycle_id = f"{today}_{current_cycle}"
 
-    # CAS 1 : NOUVEAU CYCLE
     if cycle_id != status["last_cycle"]:
         if send_discord_alert(is_success=False, cycle_h=current_cycle):
             log_activity(f"ALERTE: Nouveau cycle {current_cycle}z")
@@ -114,7 +119,6 @@ def check_noaa():
         else:
             log_activity(f"ERREUR: Échec Discord début {current_cycle}z")
 
-    # CAS 2 : VÉRIFICATION COMPLÉTION
     elif not status["is_completed"]:
         file_check = f"gfs.{today}/{current_cycle}/atmos/gfs.t{current_cycle}z.pgrb2.0p25.f384.idx"
         try:

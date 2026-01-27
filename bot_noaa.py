@@ -12,16 +12,16 @@ BASE_URL = "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/"
 
 # --- VOS MESSAGES RECALÉS SUR L'HEURE FRANÇAISE ---
 MESSAGES_DEBUT = {
-    "00": "🌙 **GRIB 00Z en préparation** (Arrivée prévue au petit matin...)",
-    "06": "🌤 **GRIB 06Z en cours** (Prêt pour la pause déjeuner !)",
-    "12": "🌆 **GRIB 12Z en route** (Le run du soir arrive...)",
-    "18": "🌑 **GRIB 18Z lancé** (Le chargement pour la nuit en cours...)"
+    "00": "🌙 **GRIB 00Z en préparation** (Arrivée prévue au petit matin...🤤)",
+    "06": "🌤 **GRIB 06Z en cours** (Il sera prêt pour la pause déjeuner !🚀)",
+    "12": "🌆 **GRIB 12Z en route** (Le run du soir arrive...🌀)",
+    "18": "🌑 **GRIB 18Z lancé** (Le chargement pour la nuit est en cours...🥱)"
 }
 
 MESSAGES_FIN = {
-    "00": "☕ **GRIB 00Z DISPONIBLE !** Bonjour l'équipe, les données du réveil sont là.\n **Et Bonne Fête aux {saint} !** 🥳",
-    "06": "🍴 **GRIB 06Z DISPONIBLE !** Juste à temps pour le point de la mi-journée. Bon app' les HPy !",
-    "12": "🍹 **GRIB 12Z DISPONIBLE !** Les prévisions pour la soirée... A vos routeurs !",
+    "00": "☕ **GRIB 00Z DISPONIBLE !** Bonjour l'équipe, les données du réveil sont là.👋\n **Et Bonne Fête aux {saint} !** 🥳",
+    "06": "🍴 **GRIB 06Z DISPONIBLE !** Juste à temps pour le point de la mi-journée. Bon app' les HPy !🍽️",
+    "12": "🍹 **GRIB 12Z DISPONIBLE !** Les prévisions pour la soirée... A vos routeurs et tchin !🥂",
     "18": "💤 **GRIB 18Z DISPONIBLE !** Le grib des courageux noctambules... 🥱😴"
 }
 

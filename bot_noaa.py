@@ -79,7 +79,7 @@ def send_discord_alert(is_success=False, cycle_h=""):
     payload = {
         "content": MENTION,
         "embeds": [{
-            "title": f"🛰 GFS GRIB MONITOR | Run {cycle_h}Z",
+            "title": f"🛰 **| RUN {cycle_h}Z |**",
             "description": msg,
             "color": color,
             "timestamp": datetime.utcnow().isoformat(),

@@ -1,7 +1,6 @@
 import requests
 import os
 import json
-import random # Ajouté pour choisir un saint dans la liste
 from datetime import datetime
 
 # --- CONFIGURATION ---
@@ -10,7 +9,7 @@ CHANNEL_ID = os.getenv('CHANNEL_ID')
 MENTION = "<@&873137469770592267>"
 BASE_URL = "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/"
 
-# --- VOS MESSAGES RECALÉS SUR L'HEURE FRANÇAISE ---
+# --- VOS MESSAGES PERSONNALISÉS ---
 MESSAGES_DEBUT = {
     "00": "🌙 **GRIB 00Z en préparation** (Arrivée prévue au petit matin...🤤)",
     "06": "🌤 **GRIB 06Z en cours** (Il sera prêt pour la pause déjeuner !🚀)",
@@ -21,31 +20,39 @@ MESSAGES_DEBUT = {
 MESSAGES_FIN = {
     "00": "☕ **GRIB 00Z DISPONIBLE !** Bonjour l'équipe, les données du réveil sont là.👋\n **Et Bonne Fête aux {saint} !** 🥳",
     "06": "🍴 **GRIB 06Z DISPONIBLE !** Juste à temps pour le point de la mi-journée. Bon app' les HPy !🍽️",
-    "12": "🍹 **GRIB 12Z DISPONIBLE !** Les prévisions pour la soirée... A vos routeurs et tchin !🥂",
+    "12": "🍹 **GRIB 12Z DISPONIBLE !** Les prévisions pour la soirée... A vos routeurs !🍹",
     "18": "💤 **GRIB 18Z DISPONIBLE !** Le grib des courageux noctambules... 🥱😴"
 }
 
 def get_saint_du_jour():
-    """Récupère le prénom du jour depuis le fichier local saints.json"""
+    """Récupère le prénom (premier mot) ou la fête complète depuis saints.json"""
     try:
         now = datetime.now()
-        mois = str(now.month)
-        jour = str(now.day)
+        mois, jour = str(now.month), str(now.day)
         
         if os.path.exists('saints.json'):
             with open('saints.json', 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                # Accès à la structure : data["mois"]["jour"] -> retourne une liste
-                liste_saints = data.get(mois, {}).get(jour, [])
-                if liste_saints:
-                    # On prend le premier de la liste ou un au hasard
-                    return liste_saints[0] 
+                entree = data.get(mois, {}).get(jour)
+                
+                if entree and isinstance(entree, list):
+                    nom_complet = entree[0].strip() #
+                    genre = entree[1].strip() #
+                    
+                    # CAS 1 : Jour férié ou fête (on garde tout le nom)
+                    if not genre:
+                        return f"Aujourd'hui c'est {nom_complet} !" #
+                    
+                    # CAS 2 : Saint/Sainte (on ne prend que le premier mot)
+                    # "Thomas d'Aquin" -> ["Thomas", "d'Aquin"] -> "Thomas"
+                    prenom_seul = nom_complet.split(' ')[0] #
+                    return f"Bonne Fête aux {prenom_seul} !" #
     except Exception as e:
         log_activity(f"ERREUR lecture saints.json: {e}")
     return None
 
 def log_activity(message):
-    """Ajoute une ligne et garde seulement les 3000 dernières lignes"""
+    """Journalisation de l'activité (limite à 3000 lignes)"""
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     new_line = f"[{timestamp}] {message}\n"
     lines = []
@@ -59,19 +66,20 @@ def log_activity(message):
         f.writelines(lines)
 
 def send_discord_alert(is_success=False, cycle_h=""):
-    """Envoie l'alerte et retourne True si l'envoi a réussi"""
+    """Envoie l'alerte sur Discord avec intégration intelligente du Saint/Fête"""
     url = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
     headers = {"Authorization": f"Bot {TOKEN}", "Content-Type": "application/json"}
     color = 0x00ff00 if is_success else 0xcc00cc
     
     if is_success:
         msg = MESSAGES_FIN.get(cycle_h, f"GRIB {cycle_h}Z terminé!")
+        # Logique spécifique au run 00Z pour les Saints/Fêtes
         if cycle_h == "00" and "{saint}" in msg:
-            prenom_saint = get_saint_du_jour()
-            if prenom_saint:
-                msg = msg.format(saint=prenom_saint)
+            phrase_fete = get_saint_du_jour()
+            if phrase_fete:
+                # Remplace toute la ligne personnalisée par la phrase complète générée
+                msg = msg.replace("**Et Bonne Fête aux {saint} !** 🥳", f"**{phrase_fete}** 🥳") #
             else:
-                # Nettoyage si le fichier saints.json est absent ou vide
                 msg = msg.replace("\n **Et Bonne Fête aux {saint} !** 🥳", "")
     else:
         msg = MESSAGES_DEBUT.get(cycle_h, f"Début de chargement du GRIB {cycle_h}Z.")
@@ -79,7 +87,7 @@ def send_discord_alert(is_success=False, cycle_h=""):
     payload = {
         "content": MENTION,
         "embeds": [{
-            "title": f"🛰 **| RUN {cycle_h}Z |**",
+            "title": f"🛰 GFS GRIB MONITOR | Run {cycle_h}Z",
             "description": msg,
             "color": color,
             "timestamp": datetime.utcnow().isoformat(),
@@ -94,6 +102,7 @@ def send_discord_alert(is_success=False, cycle_h=""):
         return False
 
 def check_noaa():
+    """Vérifie la présence des fichiers sur les serveurs de la NOAA"""
     today = datetime.utcnow().strftime('%Y%m%d')
     try:
         with open('status.json', 'r') as f:

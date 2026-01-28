@@ -39,12 +39,12 @@ def get_saint_du_jour():
                     nom_complet = entree[0].strip() #
                     genre = entree[1].strip() #
                     
-                    # CAS 1 : Jour férié ou fête (on garde tout le nom)
+                    # CAS 1 : Jour férié ou fête (on garde tout le nom de la fete)
                     if not genre:
                         return f"Aujourd'hui c'est {nom_complet} !" #
                     
-                    # CAS 2 : Saint/Sainte (on ne prend que le premier mot)
-                    # "Thomas d'Aquin" -> ["Thomas", "d'Aquin"] -> "Thomas"
+                    # CAS 2 : Saint/Sainte (on ne prend que le premier mot en cas de prenoms allonges)
+                    # exemple "Thomas d'Aquin" -> ["Thomas", "d'Aquin"] -> "Thomas"
                     prenom_seul = nom_complet.split(' ')[0] #
                     return f"Bonne Fête aux {prenom_seul} !" #
     except Exception as e:
@@ -87,7 +87,7 @@ def send_discord_alert(is_success=False, cycle_h=""):
     payload = {
         "content": MENTION,
         "embeds": [{
-            "title": f"🛰 GFS GRIB MONITOR | Run {cycle_h}Z",
+            "title": f"🛰 **| RUN {cycle_h}Z |**",
             "description": msg,
             "color": color,
             "timestamp": datetime.utcnow().isoformat(),
